@@ -164,93 +164,184 @@ updateBall:
 	cmp			r1, #268			//see if ball is hitting the 2nd row
 	bllt		brick_Number_Row2
 	@Third row of the bricks
-	cmp			r1, #300			//see if ball is hitting the 2nd row
+	cmp			r1, #300			//see if ball is hitting the 3rd row
 	bllt		brick_Number_Row3
 	@Fourth row of the bricks
-	cmp			r1, #332			//see if ball is hitting the 2nd row
+	cmp			r1, #332			//see if ball is hitting the 4th row
 	bllt		brick_Number_Row4
 	@Fifth row of the bricks
-	cmp			r1, #364			//see if ball is hitting the 2nd row
+	cmp			r1, #364			//see if ball is hitting the 5th row
 	bllt		brick_Number_Row5
 	@Sixth row of the bricks
-	cmp			r1, #396			//see if ball is hitting the 2nd row
+	cmp			r1, #396			//see if ball is hitting the 6th row
 	bllt		brick_Number_Row6
-	bl			brick_Not_Hit
-	
+	bl			brick_Not_Hit	
 	
 brick_Number_Row1:
+	add			r6, #1
+	cmp			r6, #1
+	movgt		r6, #0
+
 	mov			r8, r0	 			//ball x coordinate...
 	sub			r8, #592			//game map x coordinate
 	lsr			r8, #7 				//r8 = Brick array number
+	mov			r3, #0
+	add			r8, r3
 	ldr			r9, [r10, r8, lsl #2]//r9 = brick value
 	cmp			r9, #0				//Do while brick is present...
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
-	movne		r1, #236			//press the ball up to the brick
-	movne		r6, #1				//move down now
+//	movne		r1, #236			//press the ball up to the brick
+//	movne		r6, #1				//move down now
 	strne		r6, [r4, #12]		//update
 	//movlt		r1, #236			//you'd wanna press the ball up to the brick...?
+	beq			check_if_hit_side	//when you are in the row, you wanna check if you hit the of a brick
 brick_Number_Row2:
-	mov			r8, r0	 			//ball x coordinate...
-	sub			r8, #592			//game map x coordinate
-	lsr			r8, #7 				//r8 = Brick array number
-	add			r8, #5
-	ldr			r9, [r10, r8, lsl #2]
-	cmp			r9, #0				
-	subne		r9, #1				//Change brick value
-	strne		r9, [r10, r8, lsl #2]//Update the brick
-	movne		r1, #268			//press the ball up to the brick
-	movne		r6, #1				//move down now
-	strne		r6, [r4, #12]		//update
+	add			r6, #1
+	cmp			r6, #1
+	movgt		r6, #0
 	
+	mov			r8, r0	 			//ball x coordinate...
+	sub			r8, #592			//game map x coordinate
+	lsr			r8, #7 				//r8 = Brick array number
+	mov			r3, #5
+	add			r8, r3
+	ldr			r9, [r10, r8, lsl #2]
+	cmp			r9, #0				
+	subne		r9, #1				//Change brick value
+	strne		r9, [r10, r8, lsl #2]//Update the brick
+//	movne		r1, #268			//press the ball up to the brick
+//	movne		r6, #1				//move down now
+	strne		r6, [r4, #12]		//update
+	beq			check_if_hit_side	//when you are in the row, you wanna check if you hit the of a brick	
 brick_Number_Row3:
+	add			r6, #1
+	cmp			r6, #1
+	movgt		r6, #0
+	
 	mov			r8, r0	 			//ball x coordinate...
 	sub			r8, #592			//game map x coordinate
 	lsr			r8, #7 				//r8 = Brick array number
-	add			r8, #10
+	mov			r3, #10
+	add			r8, r3
 	ldr			r9, [r10, r8, lsl #2]
 	cmp			r9, #0				
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
-	movne		r1, #300			//press the ball up to the brick
-	movne		r6, #1				//move down now
+//	movne		r1, #300			//press the ball up to the brick
+//	movne		r6, #1				//move down now
 	strne		r6, [r4, #12]		//update
+	beq			check_if_hit_side	//when you are in the row, you wanna check if you hit the of a brick
 brick_Number_Row4:
+	add			r6, #1
+	cmp			r6, #1
+	movgt		r6, #0
+	
 	mov			r8, r0	 			//ball x coordinate...
 	sub			r8, #592			//game map x coordinate
 	lsr			r8, #7 				//r8 = Brick array number
-	add			r8, #15
+	mov			r3, #15
+	add			r8, r3
 	ldr			r9, [r10, r8, lsl #2]
 	cmp			r9, #0				
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
-	movne		r1, #332			//press the ball up to the brick
-	movne		r6, #1				//move down now
+//	movne		r1, #332			//press the ball up to the brick
+//	movne		r6, #1				//move down now
 	strne		r6, [r4, #12]		//update
+	beq			check_if_hit_side	//when you are in the row, you wanna check if you hit the of a brick
 brick_Number_Row5:
+	add			r6, #1
+	cmp			r6, #1
+	movgt		r6, #0
+	
 	mov			r8, r0	 			//ball x coordinate...
 	sub			r8, #592			//game map x coordinate
 	lsr			r8, #7 				//r8 = Brick array number
-	add			r8, #20
+	mov			r3, #20
+	add			r8, r3
 	ldr			r9, [r10, r8, lsl #2]
 	cmp			r9, #0				
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
-	movne		r1, #364			//press the ball up to the brick
-	movne		r6, #1				//move down now
+//	movne		r1, #364			//press the ball up to the brick
+//	movne		r6, #1				//move down now
 	strne		r6, [r4, #12]		//update
+	beq			check_if_hit_side	//when you are in the row, you wanna check if you hit the of a brick
 brick_Number_Row6:
+	add			r6, #1
+	cmp			r6, #1
+	movgt		r6, #0
+	
 	mov			r8, r0	 			//ball x coordinate...
 	sub			r8, #592			//game map x coordinate
 	lsr			r8, #7 				//r8 = Brick array number
-	add			r8, #25
+	mov			r3, #25
+	add			r8, r3
 	ldr			r9, [r10, r8, lsl #2]
 	cmp			r9, #0				
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
-	movne		r1, #396			//press the ball up to the brick
-	movne		r6, #1				//move down now
+//	movne		r1, #396			//press the ball up to the brick
+//	movne		r6, #1				//move down now
 	strne		r6, [r4, #12]		//update
+	beq			check_if_hit_side	//when you are in the row, you wanna check if you hit the of a brick
+
+/*
+	ldr			r0, [r4]		//ball x
+	ldr			r1, [r4, #4]	//ball y
+	ldr			r2, [r5]		//paddle x
+	ldr			r3, [r5, #4]	//paddle y
+	ldr			r5, [r4, #8]	//ball angle: 0 =45, 1 = 60
+	ldr			r6, [r4, #12]	//ball up/down direction: 0 = up, 1 = down
+	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
+*/
+
+check_if_hit_side:
+	//r8 is brick array number
+	//r9 is nothing. so free reg is r9, r10, maybe r3???
+	cmp			r5, #0			//if ball is moving 45 degrees
+	moveq		r9, #3
+	cmp			r5, #1			//if ball is moving 60 degrees
+	moveq		r9, #6		
+	
+	//Checks if it'll hit the side of a brick	
+	cmp			r7, #0			//if ball is moving left
+	subeq		r10, r0, r9		//r10 = future x if continues
+	subeq		r8, #1
+	cmp			r7, #1			//if ball is moving right
+	addeq		r10, r0, r9		//r10 = future x if continues
+	addeq		r8, #1
+	sub			r10, #592
+	lsr			r10, #7 		//r10 = Brick array number
+	add			r10, r3			//r3 is the array offset. Set from before. (hopefully, we wont need paddle y later!)
+	cmp			r10, r8			//When r10 = r8, that means it makes contact w/ that brick
+	beq			hit_side
+	bl			brick_Not_Hit			
+	
+
+
+hit_side:
+	add			r7, #1
+	cmp			r7, #1
+	movgt		r7, #0
+	
+	ldr			r10, =brick_array	
+	ldr			r9, [r10, r8, lsl #2]
+	cmp			r9, #0				
+	subne		r9, #1				//Change brick value
+	strne		r9, [r10, r8, lsl #2]//Update the brick
+	
+	addeq		r7, #1
+	cmp			r7, #1
+	movgt		r7, #0
+	str			r7, [r4, #16]		//update left/right
+	
+	//movne		r0, #396			//press the ball up to the brick
+
+	
+	//cmp			r10, r8		//if r10 equals one array left 
+	//then change ball behaviour
 
 	
 brick_Not_Hit:
@@ -355,7 +446,6 @@ update_ball_info:
 	bl			draw_Ball
 
 
-	
 lose:
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov			pc, lr	

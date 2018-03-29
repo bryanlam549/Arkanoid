@@ -151,9 +151,9 @@ continue:						// wait for user to release button
 	//Checks if left or rights being pressed
 	mov		r0, r6		
 	ldr		r1, =paddle_coordinates
-	lsrs		r7, #9
-	movlo		r2, #6
-	movhi		r2, #3
+	lsrs	r7, #9
+	movlo	r2, #6
+	movhi	r2, #3
 	bl		updatePlayingStatePaddle
 		
 	
@@ -170,31 +170,6 @@ continue:						// wait for user to release button
 	bl		playing_state
 	
 	
-	
-/*
-	cmp		r0, #6				//Left
-	ldreq		r1, =paddle_coordinates
-	bleq		updatePlayingStatePaddle
-		
-	cmp		r0, #7				//Right
-	ldreq		r1, =paddle_coordinates
-	bleq		updatePlayingStatePaddle*/
-
-/*	
-	cmp		r0, #3				//Start
-	bleq		start_Menu			//Should return restart, or quit
-	cmp		r1, #0				//quit
-	bleq		start				//go to main menu
-	cmp		r1, #1				//Restart	
-	bleq		playing_state			//go to initial game state
-	cmp		r1, #2				//Start closes menu
-	bleq		playing_state			//Doing this for now as place holder, actually this works. so..
-	//bleq		saved_state			//go to the saved state before pressing start
-*/
-	//A				Speed up
-
-	
-
 
 exit:
 	bl			quit_game
