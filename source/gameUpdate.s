@@ -107,51 +107,145 @@ updateBall:
 	bl			draw_Background_Minus_Bricks
 	ldr			r0, =brick_array
 	bl			draw_Bricks
+
+	mov			r2, r4
+	bl			ball_Direction
+	mov			r2, r4
+	bl			wall_Collision
+	mov			r2, r4
+	bl			brick_Collision
+	mov			r2, r4
+	mov			r3, r5
+	bl			paddle_Collision
 	
-	ldr			r0, [r4]		//ball x
-	ldr			r1, [r4, #4]	//ball y
+update_ball_info:
+	@update ball info
+	str			r0,	[r4]
+	str			r1, [r4, #4]	
+	bl			draw_Ball
+	
+lose:
+	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			pc, lr
+
+// tests paddle collision
+// returns 0 in r3 if player loses life, otherwise returns 1
+paddle_Collision:
+	mov 		fp, sp	
+	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+
+	mov			r4, r2
+	mov			r5, r3
+
 	ldr			r2, [r5]		//paddle x
 	ldr			r3, [r5, #4]	//paddle y
 	ldr			r5, [r4, #8]	//ball angle: 0 =45, 1 = 60
 	ldr			r6, [r4, #12]	//ball up/down direction: 0 = up, 1 = down
 	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
 	
-	@move the ball depending on angle, y-direction and x-direction
-	cmp			r5, #0			//45
-	moveq		r8, #3
-	moveq		r9, #3
-	cmp			r5, #1			//60
-	moveq		r8, #6
-	moveq		r9, #3
-	cmp			r6, #0			//up
-	subeq		r1, r9
-	cmp			r6, #1			//down
-	addeq		r1, r9
-	cmp			r7, #0			//left
-	subeq		r0, r8
-	cmp			r7, #1			//right
-	addeq		r0, r8
-	
-	@Collision left wall
-	cmp			r0, #592		//compare the x coordinate to edge of wall
-	movlt		r0, #592		//press the ball up to the wall
-	movlt		r7, #1			//move right now
-	strlt		r7, [r4, #16]	//Update
-	
-	@Collision right wall
-	cmp			r0, #1216		//compare the x coordinate to edge of wall
-	movgt		r0, #1216		//press the ball up to the wall
-	movgt		r7, #0			//move left now
-	strgt		r7, [r4, #16]	//update
-	
-	@Collision ceiling			
-	cmp			r1, #204		//compare the y coordinate to edge of ceiling
-	movlt		r1, #204		//press the ball up to the wall
-	movlt		r6, #1			//move down now
-	strlt		r6, [r4, #12]	//update
-	
+	@Collision Paddle		
+	@right tip
+	add			r10, r2, #128	//end of the right tip 
+	add			r8, r2, #92		//beginning of the right tip
+	cmp			r0, r8			//compare ball& beginning of right tip
+	bgt			test_If_Between_Right_Tip
 
+	@middle right
+	add			r10, r2, #92	//end of the middle right portion
+	add			r8, r2, #64		//beginning of the middle right portion
+	cmp			r0, r8			//compare ball& beginning of middle right
+	bgt			test_If_Between_Middle_Right
+	@middle left
+	add			r10, r2, #64	//end of the middle left portion
+	add			r8, r2, #36		//beginning of the middle right portion
+	cmp			r0, r8			//compare ball& beginning of middle right 
+	bgt			test_If_Between_Middle_Left
 
+	@left tip
+	add			r10, r2, #36	//end of the left tip of the paddle
+	cmp			r0, r2			//compare ball&paddle beginning
+	bgt			test_If_Between_Left_Tip
+	
+	b			not_On_Paddle
+
+test_If_Between_Right_Tip:
+	cmp			r0, r10
+	movlt		r9, #4
+	blt		test_If_Touch_Pad
+	b			not_On_Paddle
+
+test_If_Between_Middle_Right:
+	cmp			r0, r10
+	movlt		r9, #3
+	blt		test_If_Touch_Pad
+	b			not_On_Paddle
+
+test_If_Between_Middle_Left:
+	cmp			r0, r10
+	movlt		r9, #2
+	blt		test_If_Touch_Pad
+	b			not_On_Paddle
+
+	
+test_If_Between_Left_Tip:
+	cmp			r0, r10
+	movlt		r9, #1
+	blt		test_If_Touch_Pad
+	b			not_On_Paddle
+	
+test_If_Touch_Pad:
+	cmp			r1, #764		//compare y coordinate of ball w/ top of paddle
+	movgt		r1, #764		//press the ball up to the paddle
+	movgt		r6, #0			//move up now
+	strgt		r6, [r4, #12]	//update
+	bgt		which_Paddle_Portion
+	b			not_On_Paddle
+	
+which_Paddle_Portion:
+	cmp			r9, #4			//hit right tip
+	moveq		r5, #1			//move at 60 degrees now
+	moveq		r7, #1			//move right now
+	streq		r5, [r4, #8]	//update angle
+	streq		r7, [r4, #16]	//update left/right
+	
+	cmp			r9, #3			//hit middle right
+	moveq		r5, #0			//move at 45 degrees now
+	moveq		r7, #1			//move right now
+	streq		r5, [r4, #8]	//update angle
+	streq		r7, [r4, #16]	//update left/right
+
+	cmp			r9, #2			//hit middle left
+	moveq		r5, #0			//move at 45 degrees now
+	moveq		r7, #0			//move right now
+	streq		r5, [r4, #8]	//update angle
+	streq		r7, [r4, #16]	//update left/right
+	
+	
+	cmp			r9, #1			//hit left tip
+	moveq		r5, #1			//move at 60 degrees now
+	moveq		r7, #0			//move left now
+	streq		r5, [r4, #8]	//update angle
+	streq		r7, [r4, #16]	//update left/right
+	
+not_On_Paddle:	
+	mov			r9, #0			//do i do this? yes i do...
+	cmp			r1, #796		//compare the y coordinate floor
+	movgt		r3, #0			//You lose if you hit the floor
+	movlt		r3, #1
+	
+	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			pc, lr
+	
+// checks for brick collision
+// TODO: value pack array update
+brick_Collision:
+	mov 		fp, sp	
+	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			r4, r2
+
+	ldr			r5, [r4, #8]	//ball angle: 0 =45, 1 = 60
+	ldr			r6, [r4, #12]	//ball up/down direction: 0 = up, 1 = down
+	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
 	@Collision Brick: r8-r10 is free and r3 but... try not to use r3
 	//ball x = r0
 	//ball y = r1
@@ -181,13 +275,12 @@ updateBall:
 	mov			r3, #25
 	cmp			r1, #396			//see if ball is hitting the 6th row
 	blt			continue_Brick_Collision
-	bl			brick_Not_Hit	
+	bl			exit_Brick_Collision
 	
 continue_Brick_Collision:
 	add			r6, #1
 	cmp			r6, #1
 	movgt		r6, #0
-
 	mov			r8, r0	 			//ball x coordinate...
 	sub			r8, #592			//game map x coordinate
 	lsr			r8, #7 				//r8 = Brick array number
@@ -232,9 +325,7 @@ check_if_hit_side:
 	add			r10, r3			//r3 is the array offset. Set from before. (hopefully, we wont need paddle y later!)
 	cmp			r10, r8			//When r10 = r8, that means it makes contact w/ that brick
 	beq			hit_side
-	bl			brick_Not_Hit			
-	
-
+	b			exit_Brick_Collision
 
 hit_side:
 	add			r7, #1
@@ -258,113 +349,73 @@ hit_side:
 	//cmp			r10, r8		//if r10 equals one array left 
 	//then change ball behaviour
 
-	
-brick_Not_Hit:
-
-	@Collision Paddle		
-	@right tip
-	add			r10, r2, #128	//end of the right tip 
-	add			r8, r2, #92		//beginning of the right tip
-	cmp			r0, r8			//compare ball& beginning of right tip
-	bgt			test_If_Between_Right_Tip
-
-	@middle right
-	add			r10, r2, #92	//end of the middle right portion
-	add			r8, r2, #64		//beginning of the middle right portion
-	cmp			r0, r8			//compare ball& beginning of middle right
-	bgt			test_If_Between_Middle_Right
-	@middle left
-	add			r10, r2, #64	//end of the middle left portion
-	add			r8, r2, #36		//beginning of the middle right portion
-	cmp			r0, r8			//compare ball& beginning of middle right 
-	bgt			test_If_Between_Middle_Left
-
-	@left tip
-	add			r10, r2, #36	//end of the left tip of the paddle
-	cmp			r0, r2			//compare ball&paddle beginning
-	bgt			test_If_Between_Left_Tip
-	
-	b			not_On_Paddle
-
-
-test_If_Between_Right_Tip:
-	cmp			r0, r10
-	movlt		r9, #4
-	bllt		test_If_Touch_Pad
-	b			not_On_Paddle
-
-test_If_Between_Middle_Right:
-	cmp			r0, r10
-	movlt		r9, #3
-	bllt		test_If_Touch_Pad
-	b			not_On_Paddle
-
-test_If_Between_Middle_Left:
-	cmp			r0, r10
-	movlt		r9, #2
-	bllt		test_If_Touch_Pad
-	b			not_On_Paddle
-
-	
-test_If_Between_Left_Tip:
-	cmp		r0, r10
-	movlt		r9, #1
-	bllt		test_If_Touch_Pad
-	b			not_On_Paddle
-
-
-	
-test_If_Touch_Pad:
-	cmp			r1, #764		//compare y coordinate of ball w/ top of paddle
-	movgt		r1, #764		//press the ball up to the paddle
-	movgt		r6, #0			//move up now
-	strgt		r6, [r4, #12]	//update
-	blgt		which_Paddle_Portion
-	b			not_On_Paddle
-	
-which_Paddle_Portion:
-	cmp			r9, #4			//hit right tip
-	moveq		r5, #1			//move at 60 degrees now
-	moveq		r7, #1			//move right now
-	streq		r5, [r4, #8]	//update angle
-	streq		r7, [r4, #16]	//update left/right
-	
-	cmp			r9, #3			//hit middle right
-	moveq		r5, #0			//move at 45 degrees now
-	moveq		r7, #1			//move right now
-	streq		r5, [r4, #8]	//update angle
-	streq		r7, [r4, #16]	//update left/right
-
-	cmp			r9, #2			//hit middle left
-	moveq		r5, #0			//move at 45 degrees now
-	moveq		r7, #0			//move right now
-	streq		r5, [r4, #8]	//update angle
-	streq		r7, [r4, #16]	//update left/right
-	
-	
-	cmp			r9, #1			//hit left tip
-	moveq		r5, #1			//move at 60 degrees now
-	moveq		r7, #0			//move left now
-	streq		r5, [r4, #8]	//update angle
-	streq		r7, [r4, #16]	//update left/right
-
-
-not_On_Paddle:	
-	mov			r9, #0			//do i do this? yes i do...
-	cmp			r1, #796		//compare the y coordinate floor
-	bgt			lose			//You lose if you hit the floor
-	
-update_ball_info:
-	@update ball info
-	str			r0,	[r4]
-	str			r1, [r4, #4]	
-	bl			draw_Ball
-
-
-lose:
+exit_Brick_Collision:	
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
-	mov			pc, lr	
+	mov			pc, lr
 
+// check for wall collision
+wall_Collision:
+	mov 		fp, sp
+	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			r4, r2
+	
+	ldr			r6, [r4, #12]	//ball up/down direction: 0 = up, 1 = down
+	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
+	
+	@Collision left wall
+	cmp			r0, #592		//compare the x coordinate to edge of wall
+	movlt		r0, #592		//press the ball up to the wall
+	movlt		r7, #1			//move right now
+	strlt		r7, [r4, #16]	//Update
+	
+	@Collision right wall
+	cmp			r0, #1216		//compare the x coordinate to edge of wall
+	movgt		r0, #1216		//press the ball up to the wall
+	movgt		r7, #0			//move left now
+	strgt		r7, [r4, #16]	//update
+	
+	@Collision ceiling			
+	cmp			r1, #204		//compare the y coordinate to edge of ceiling
+	movlt		r1, #204		//press the ball up to the wall
+	movlt		r6, #1			//move down now
+	strlt		r6, [r4, #12]	//update
+	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			pc, lr
+
+@move the ball depending on angle, y-direction and x-direction
+ball_Direction:
+	mov 		fp, sp	
+	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			r4, r2
+	
+	ldr			r0, [r4]
+	ldr			r1, [r4, #4]
+	ldr			r5, [r4, #8]	//ball angle: 0 =45, 1 = 60
+	ldr			r6, [r4, #12]	//ball up/down direction: 0 = up, 1 = down
+	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
+	
+	cmp			r5, #0			//45
+	moveq		r8, #3
+	moveq		r9, #3
+	
+	cmp			r5, #1			//60
+	moveq		r8, #6
+	moveq		r9, #3
+	
+	cmp			r6, #0			//up
+	subeq		r1, r9
+	
+	cmp			r6, #1			//down
+	addeq		r1, r9
+	
+	cmp			r7, #0			//left
+	subeq		r0, r8
+	
+	cmp			r7, #1			//right
+	addeq		r0, r8
+	
+	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			pc, lr
 
 @ Data section
 .section .data
