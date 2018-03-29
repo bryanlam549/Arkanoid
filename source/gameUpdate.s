@@ -68,7 +68,7 @@ updatePlayingStatePaddle:
 	bl		draw_Floor
 	
 	ldr		r0, [r5]		//paddle x
-	ldr		r1, [r5, #4]		//paddle y
+	ldr		r1, [r5, #4]	//paddle y
 
 left_check:
 	cmp		r4, #6			//Left button
@@ -94,86 +94,271 @@ draw:
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr	
 
+
 //r0 = button pressed
 //r1 = address of ball coordinates
 updateBall:
 	mov 		fp, sp	
 	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	
-	mov		r4, r0			//r4 = ball coordinates
-	mov		r5, r1			//r5 = paddle coordinates
+	mov			r4, r0			//r4 = ball coordinates
+	mov			r5, r1			//r5 = paddle coordinates
 	@Update background while ball moves
-	bl		draw_Background_Minus_Bricks
-
-	ldr		r0, [r4]		//ball x
-	ldr		r1, [r4, #4]		//ball y
-	ldr		r2, [r5]		//paddle x
-	ldr		r3, [r5, #4]		//paddle y
-	ldr		r5, [r4, #8]		//ball angle: 0 =45, 1 = 60
-	ldr		r6, [r4, #12]		//ball up/down direction: 0 = up, 1 = down
-	ldr		r7, [r4, #16]		//ball left/right direction: 0 = left, 1 = right
+	bl			draw_Background_Minus_Bricks
+	ldr			r0, =brick_array
+	bl			draw_Bricks
+	
+	ldr			r0, [r4]		//ball x
+	ldr			r1, [r4, #4]	//ball y
+	ldr			r2, [r5]		//paddle x
+	ldr			r3, [r5, #4]	//paddle y
+	ldr			r5, [r4, #8]	//ball angle: 0 =45, 1 = 60
+	ldr			r6, [r4, #12]	//ball up/down direction: 0 = up, 1 = down
+	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
 	
 	@move the ball depending on angle, y-direction and x-direction
-	cmp		r5, #0			//45
+	cmp			r5, #0			//45
 	moveq		r8, #3
 	moveq		r9, #3
-	cmp		r5, #1			//60
+	cmp			r5, #1			//60
 	moveq		r8, #6
 	moveq		r9, #3
-	cmp		r6, #0			//up
+	cmp			r6, #0			//up
 	subeq		r1, r9
-	cmp		r6, #1			//down
+	cmp			r6, #1			//down
 	addeq		r1, r9
-	cmp		r7, #0			//left
+	cmp			r7, #0			//left
 	subeq		r0, r8
-	cmp		r7, #1			//right
+	cmp			r7, #1			//right
 	addeq		r0, r8
 	
 	@Collision left wall
-	cmp		r0, #592		//compare the x coordinate to edge of wall
+	cmp			r0, #592		//compare the x coordinate to edge of wall
 	movlt		r0, #592		//press the ball up to the wall
 	movlt		r7, #1			//move right now
-	strlt		r7, [r4, #16]		//Update
+	strlt		r7, [r4, #16]	//Update
 	
 	@Collision right wall
-	cmp		r0, #1216		//compare the x coordinate to edge of wall
+	cmp			r0, #1216		//compare the x coordinate to edge of wall
 	movgt		r0, #1216		//press the ball up to the wall
 	movgt		r7, #0			//move left now
-	strgt		r7, [r4, #16]		//update
+	strgt		r7, [r4, #16]	//update
 	
 	@Collision ceiling			
-	cmp		r1, #204		//compare the y coordinate to edge of ceiling
+	cmp			r1, #204		//compare the y coordinate to edge of ceiling
 	movlt		r1, #204		//press the ball up to the wall
 	movlt		r6, #1			//move down now
-	strlt		r6, [r4, #12]		//update
+	strlt		r6, [r4, #12]	//update
 	
-	@Collision Paddle			testing.... keep it 45
-	add		r10, r2, #128		//end of the paddle, x
-	cmp		r0, r2			//compare ball&paddle beginning
-	bgt		test_If_Between_Pad
-	b		skip
-test_If_Between_Pad:
+
+
+	@Collision Brick: r8-r10 is free and r3 but... try not to use r3
+	//ball x = r0
+	//ball y = r1
+	
+	@First row of the bricks
+	ldr			r10, =brick_array	//Brick array
+	cmp			r1, #236			//see if ball is hitting the 1st row
+	bllt		brick_Number_Row1
+	@Second row of the bricks
+	cmp			r1, #268			//see if ball is hitting the 2nd row
+	bllt		brick_Number_Row2
+	@Third row of the bricks
+	cmp			r1, #300			//see if ball is hitting the 2nd row
+	bllt		brick_Number_Row3
+	@Fourth row of the bricks
+	cmp			r1, #332			//see if ball is hitting the 2nd row
+	bllt		brick_Number_Row4
+	@Fifth row of the bricks
+	cmp			r1, #364			//see if ball is hitting the 2nd row
+	bllt		brick_Number_Row5
+	@Sixth row of the bricks
+	cmp			r1, #396			//see if ball is hitting the 2nd row
+	bllt		brick_Number_Row6
+	bl			brick_Not_Hit
+	
+	
+brick_Number_Row1:
+	mov			r8, r0	 			//ball x coordinate...
+	sub			r8, #592			//game map x coordinate
+	lsr			r8, #7 				//r8 = Brick array number
+	ldr			r9, [r10, r8, lsl #2]//r9 = brick value
+	cmp			r9, #0				//Do while brick is present...
+	subne		r9, #1				//Change brick value
+	strne		r9, [r10, r8, lsl #2]//Update the brick
+	movne		r1, #236			//press the ball up to the brick
+	movne		r6, #1				//move down now
+	strne		r6, [r4, #12]		//update
+	//movlt		r1, #236			//you'd wanna press the ball up to the brick...?
+brick_Number_Row2:
+	mov			r8, r0	 			//ball x coordinate...
+	sub			r8, #592			//game map x coordinate
+	lsr			r8, #7 				//r8 = Brick array number
+	add			r8, #5
+	ldr			r9, [r10, r8, lsl #2]
+	cmp			r9, #0				
+	subne		r9, #1				//Change brick value
+	strne		r9, [r10, r8, lsl #2]//Update the brick
+	movne		r1, #268			//press the ball up to the brick
+	movne		r6, #1				//move down now
+	strne		r6, [r4, #12]		//update
+	
+brick_Number_Row3:
+	mov			r8, r0	 			//ball x coordinate...
+	sub			r8, #592			//game map x coordinate
+	lsr			r8, #7 				//r8 = Brick array number
+	add			r8, #10
+	ldr			r9, [r10, r8, lsl #2]
+	cmp			r9, #0				
+	subne		r9, #1				//Change brick value
+	strne		r9, [r10, r8, lsl #2]//Update the brick
+	movne		r1, #300			//press the ball up to the brick
+	movne		r6, #1				//move down now
+	strne		r6, [r4, #12]		//update
+brick_Number_Row4:
+	mov			r8, r0	 			//ball x coordinate...
+	sub			r8, #592			//game map x coordinate
+	lsr			r8, #7 				//r8 = Brick array number
+	add			r8, #15
+	ldr			r9, [r10, r8, lsl #2]
+	cmp			r9, #0				
+	subne		r9, #1				//Change brick value
+	strne		r9, [r10, r8, lsl #2]//Update the brick
+	movne		r1, #332			//press the ball up to the brick
+	movne		r6, #1				//move down now
+	strne		r6, [r4, #12]		//update
+brick_Number_Row5:
+	mov			r8, r0	 			//ball x coordinate...
+	sub			r8, #592			//game map x coordinate
+	lsr			r8, #7 				//r8 = Brick array number
+	add			r8, #20
+	ldr			r9, [r10, r8, lsl #2]
+	cmp			r9, #0				
+	subne		r9, #1				//Change brick value
+	strne		r9, [r10, r8, lsl #2]//Update the brick
+	movne		r1, #364			//press the ball up to the brick
+	movne		r6, #1				//move down now
+	strne		r6, [r4, #12]		//update
+brick_Number_Row6:
+	mov			r8, r0	 			//ball x coordinate...
+	sub			r8, #592			//game map x coordinate
+	lsr			r8, #7 				//r8 = Brick array number
+	add			r8, #25
+	ldr			r9, [r10, r8, lsl #2]
+	cmp			r9, #0				
+	subne		r9, #1				//Change brick value
+	strne		r9, [r10, r8, lsl #2]//Update the brick
+	movne		r1, #396			//press the ball up to the brick
+	movne		r6, #1				//move down now
+	strne		r6, [r4, #12]		//update
+
+	
+brick_Not_Hit:
+
+	@Collision Paddle		
+	@right tip
+	add			r10, r2, #128	//end of the right tip 
+	add			r8, r2, #92		//beginning of the right tip
+	cmp			r0, r8			//compare ball& beginning of right tip
+	bgt			test_If_Between_Right_Tip
+
+	@middle right
+	add			r10, r2, #92	//end of the middle right portion
+	add			r8, r2, #64		//beginning of the middle right portion
+	cmp			r0, r8			//compare ball& beginning of middle right
+	bgt			test_If_Between_Middle_Right
+	@middle left
+	add			r10, r2, #64	//end of the middle left portion
+	add			r8, r2, #36		//beginning of the middle right portion
+	cmp			r0, r8			//compare ball& beginning of middle right 
+	bgt			test_If_Between_Middle_Left
+
+	@left tip
+	add			r10, r2, #36	//end of the left tip of the paddle
+	cmp			r0, r2			//compare ball&paddle beginning
+	bgt			test_If_Between_Left_Tip
+	
+	b			not_On_Paddle
+
+
+test_If_Between_Right_Tip:
+	cmp			r0, r10
+	movlt		r9, #4
+	bllt		test_If_Touch_Pad
+	b			not_On_Paddle
+
+test_If_Between_Middle_Right:
+	cmp			r0, r10
+	movlt		r9, #3
+	bllt		test_If_Touch_Pad
+	b			not_On_Paddle
+
+test_If_Between_Middle_Left:
+	cmp			r0, r10
+	movlt		r9, #2
+	bllt		test_If_Touch_Pad
+	b			not_On_Paddle
+
+	
+test_If_Between_Left_Tip:
 	cmp		r0, r10
-	bl		test_If_Touch_Pad
-	b		skip
+	movlt		r9, #1
+	bllt		test_If_Touch_Pad
+	b			not_On_Paddle
+
+
+	
 test_If_Touch_Pad:
-	cmp		r1, #764		//compare y coordinate of ball w/ top of paddle
+	cmp			r1, #764		//compare y coordinate of ball w/ top of paddle
 	movgt		r1, #764		//press the ball up to the paddle
 	movgt		r6, #0			//move up now
 	strgt		r6, [r4, #12]	//update
-
-skip:	
-	cmp		r1, #796		//compare the y coordinate floor
-	bgt		lose			//You lose if you hit the floor
+	blgt		which_Paddle_Portion
+	b			not_On_Paddle
 	
+which_Paddle_Portion:
+	cmp			r9, #4			//hit right tip
+	moveq		r5, #1			//move at 60 degrees now
+	moveq		r7, #1			//move right now
+	streq		r5, [r4, #8]	//update angle
+	streq		r7, [r4, #16]	//update left/right
+	
+	cmp			r9, #3			//hit middle right
+	moveq		r5, #0			//move at 45 degrees now
+	moveq		r7, #1			//move right now
+	streq		r5, [r4, #8]	//update angle
+	streq		r7, [r4, #16]	//update left/right
+
+	cmp			r9, #2			//hit middle left
+	moveq		r5, #0			//move at 45 degrees now
+	moveq		r7, #0			//move right now
+	streq		r5, [r4, #8]	//update angle
+	streq		r7, [r4, #16]	//update left/right
+	
+	
+	cmp			r9, #1			//hit left tip
+	moveq		r5, #1			//move at 60 degrees now
+	moveq		r7, #0			//move left now
+	streq		r5, [r4, #8]	//update angle
+	streq		r7, [r4, #16]	//update left/right
+
+
+not_On_Paddle:	
+	mov			r9, #0			//do i do this? yes i do...
+	cmp			r1, #796		//compare the y coordinate floor
+	bgt			lose			//You lose if you hit the floor
+	
+update_ball_info:
 	@update ball info
-	str		r0,[r4]
-	str		r1, [r4, #4]	
-	bl		draw_Ball
+	str			r0,	[r4]
+	str			r1, [r4, #4]	
+	bl			draw_Ball
+
+
 	
 lose:
-	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
-	mov		pc, lr	
+	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			pc, lr	
 
 
 @ Data section

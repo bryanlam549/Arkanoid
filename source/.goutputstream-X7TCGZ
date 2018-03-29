@@ -8,11 +8,10 @@ draw_Background_Minus_Bricks:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		r9, #0			//Increment variable. How many tiles you want in x direction
-	mov		r4, #0			//Increment variable. How many tiles you want in y direction
+	//mov		r4, #0			//Increment variable. How many tiles you want in y direction
 	mov		r5, #32			//width of image
 	mov		r6, #32			//height of image
-	mov		r7, #592		//x
-	mov		r8, #396		//y
+
 
 loopMinusBricks:
 	ldr 	r0, =background	//address for background
@@ -38,7 +37,7 @@ loopMinusBricks:
 	mov		r9, #0			//Reset for a new row
 	add		r8, r6			//Add the height to y for offset.
 	add		r4, #1			//increment
-	cmp		r4, #12			//Want 14 tiles in the y direction
+	cmp		r4, #22			//Want 2 tiles in the y direction
 	blt		loopMinusBricks
 
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}

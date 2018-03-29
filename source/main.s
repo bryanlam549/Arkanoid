@@ -41,7 +41,7 @@ initial_pixels:						//initial state, ball still on paddle
 	
 	ldr		r0, =brick_array
 	bl		draw_Bricks
-
+	
 	ldr		r0, [r4]			//x
 	ldr		r1, [r4, #4]			//y
 	bl		draw_Paddle			//r0 = x, r1 = y
