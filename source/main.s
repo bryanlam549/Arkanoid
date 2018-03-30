@@ -1,4 +1,4 @@
-.global main, brick_array
+.global main, brick_array, life_Score
 main:
 	@ ask for frame buffer information
 	ldr 		r0, =frameBufferInfo 		// frame buffer information structure
@@ -31,8 +31,62 @@ initialize_values:					//Whenver you press restart, you'd go back here
 	mov		r2, #1				//x-direction = right
 	str		r2, [r5, #16]			//store the starting x-direction
 	@also initialize brick array
-	//do this
-	//And intialize lives=3 + score=0
+
+	mov		r3, #3				// brick 3
+	mov		r2, #2				// brick 2
+	mov		r1, #1				// brick 1
+	
+	ldr		r0, =brick_array	// brick array
+	mov		r4, #-1				//increment variable
+	bl		test_brick_array
+initialize_brick_array:
+	cmp		r4, #10
+	strlt	r3, [r0, r4, lsl #2]
+	blt		test_brick_array
+	cmp		r4, #20
+	strlt	r2, [r0, r4, lsl #2]
+	blt		test_brick_array
+	cmp		r4, #30
+	strlt	r1, [r0, r4, lsl #2]
+	blt		test_brick_array
+	
+test_brick_array:
+	add		r4, #1
+	cmp		r4, #30
+	blt		initialize_brick_array
+	
+	@initialize lives and score
+	mov		r0, #3
+	mov		r1, #0
+	ldr		r2, =life_Score
+	str		r0, [r2]
+	str		r1, [r2, #4]
+	b		initial_pixels
+	
+initialize_values_after_life_lost:	//Whenver you lose a life. But don't reset lives, score or brick arrays
+	@game over if life = 0
+	ldr		r0, =life_Score
+	ldr		r1, [r0]
+	cmp		r1, #0
+	blt		game_Over			//should be gameover
+	
+	@store initial paddle coordinates
+	ldr		r4, =paddle_coordinates
+	mov		r0, #848			//starting x coordinates for paddle
+	str		r0, [r4]			//store current x value
+	mov		r1, #780			//starting y coorinates for paddle
+	str		r1, [r4, #4]			//store current y value
+	@store initial ball coordinates 
+	ldr		r5, =ball_coordinates
+	mov		r0, #904			//starting x coordinates for ball
+	str		r0, [r5]			//store current x value
+	mov		r1, #764			//startign y coorinates for ball
+	str		r1, [r5, #4]			//store current y value
+	mov		r2, #0				//angle = 45, y-direction = up
+	str		r2, [r5, #8]			//store the starting angle
+	str		r2, [r5, #12]			//store the starting y-direction
+	mov		r2, #1				//x-direction = right
+	str		r2, [r5, #16]			//store the starting x-direction
 	
 initial_pixels:						//initial state, ball still on paddle
 
@@ -42,10 +96,14 @@ initial_pixels:						//initial state, ball still on paddle
 	ldr		r0, =brick_array
 	bl		draw_Bricks
 	
+	bl		draw_Lives_Score
+	
+	ldr		r4, =paddle_coordinates
 	ldr		r0, [r4]			//x
 	ldr		r1, [r4, #4]			//y
 	bl		draw_Paddle			//r0 = x, r1 = y
 
+	ldr		r5, =ball_coordinates
 	ldr		r0, [r5]			//x
 	ldr		r1, [r5, #4]			//y
 	bl		draw_Ball			//r0 = x, r1 = y
@@ -131,10 +189,20 @@ read_input:						// read SNES input until button pressed
 	ldr		r0, =ball_coordinates
 	ldr		r1, =paddle_coordinates
 	bl		updateBall
-	//r0 = if ball hit the floor
-	//branch to lose life. and lose life = 0 will branch to game over.
-	//Will also return if it hits a brick too? If hits a brick then update bricks
 	
+	@checks win: need to change this when we add value packs
+	ldr		r0, =life_Score
+	ldr		r0, [r0, #4]
+	cmp		r0, #60
+	beq		winner
+	
+	@checks lose life and lose
+	cmp		r3, #1				//Means you hit the floor
+	ldreq	r1, =life_Score
+	ldreq	r2, [r1]
+	subeq	r2, #1
+	streq	r2, [r1]
+	beq		initialize_values_after_life_lost
 	
 	bl		Read_SNES
 	mov		r7, r0
@@ -166,11 +234,18 @@ continue:						// wait for user to release button
 	bleq		initialize_values//go to initial game state
 	cmp		r1, #2				//Start closes menu
 	bleq		saved_state			//go to the saved state before pressing start
-	
 	bl		playing_state
-	
-	
+	bl		exit
 
+winner:
+	bl			draw_Winner
+	bl			find_Button
+	bl			start
+
+game_Over:
+	bl			draw_Game_Over
+	bl			find_Button
+	bl			start
 exit:
 	bl			quit_game
 	@ stop
@@ -188,3 +263,6 @@ ball_coordinates:	//x, y, 45/60, up/down, left/right
 
 brick_array:
 	.int	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+
+life_Score:			//life, score
+	.int	3, 0

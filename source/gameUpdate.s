@@ -117,6 +117,8 @@ updateBall:
 	mov			r2, r4
 	mov			r3, r5
 	bl			paddle_Collision
+	cmp			r3, #1			//Means the floor has been hit
+	beq			exit
 	
 update_ball_info:
 	@update ball info
@@ -124,9 +126,11 @@ update_ball_info:
 	str			r1, [r4, #4]	
 	bl			draw_Ball
 	
-lose:
+exit:
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov			pc, lr
+
+
 
 // tests paddle collision
 // returns 0 in r3 if player loses life, otherwise returns 1
@@ -229,9 +233,8 @@ which_Paddle_Portion:
 	
 not_On_Paddle:	
 	mov			r9, #0			//do i do this? yes i do...
-	cmp			r1, #796		//compare the y coordinate floor
-	movgt		r3, #0			//You lose if you hit the floor
-	movlt		r3, #1
+	cmp			r1, #764		//compare the y coordinate floor
+	movgt		r3, #1			//You lose if you hit the floor
 	
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov			pc, lr
@@ -289,21 +292,17 @@ continue_Brick_Collision:
 	cmp			r9, #0				//Do while brick is present...
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
-//	movne		r1, #236			//press the ball up to the brick
-//	movne		r6, #1				//move down now
+
+	@update score
+	ldrne		r9, =life_Score		
+	ldrne		r10, [r9, #4]
+	addne		r10, #1
+	strne		r10, [r9, #4]
+
 	strne		r6, [r4, #12]		//update
 	//movlt		r1, #236			//you'd wanna press the ball up to the brick...?
 	beq			check_if_hit_side	//when you are in the row, you wanna check if you hit the of a brick
-
-/*
-	ldr			r0, [r4]		//ball x
-	ldr			r1, [r4, #4]	//ball y
-	ldr			r2, [r5]		//paddle x
-	ldr			r3, [r5, #4]	//paddle y
-	ldr			r5, [r4, #8]	//ball angle: 0 =45, 1 = 60
-	ldr			r6, [r4, #12]	//ball up/down direction: 0 = up, 1 = down
-	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
-*/
+	bl			brick_Not_Hit
 
 check_if_hit_side:
 	//r8 is brick array number
@@ -343,12 +342,6 @@ hit_side:
 	movgt		r7, #0
 	str			r7, [r4, #16]		//update left/right
 	
-	//movne		r0, #396			//press the ball up to the brick
-
-	
-	//cmp			r10, r8		//if r10 equals one array left 
-	//then change ball behaviour
-
 exit_Brick_Collision:	
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov			pc, lr
@@ -379,6 +372,9 @@ wall_Collision:
 	movlt		r1, #204		//press the ball up to the wall
 	movlt		r6, #1			//move down now
 	strlt		r6, [r4, #12]	//update
+	
+	
+brick_Not_Hit:
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov			pc, lr
 
@@ -395,12 +391,12 @@ ball_Direction:
 	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
 	
 	cmp			r5, #0			//45
-	moveq		r8, #3
-	moveq		r9, #3
+	moveq		r8, #7
+	moveq		r9, #7
 	
 	cmp			r5, #1			//60
-	moveq		r8, #6
-	moveq		r9, #3
+	moveq		r8, #14
+	moveq		r9, #7
 	
 	cmp			r6, #0			//up
 	subeq		r1, r9

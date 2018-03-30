@@ -2,8 +2,94 @@
 @ Code section
 .section .text
 
-.global draw_Background, draw_Bricks, draw_Paddle, draw_Ball, draw_Floor, draw_Background_Minus_Bricks
+.global draw_Background, draw_Bricks, draw_Paddle, draw_Ball, draw_Floor, draw_Background_Minus_Bricks, draw_Lives_Score, draw_Game_Over, draw_Winner
 
+draw_Winner:
+	mov 	fp, sp	
+	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+
+	mov	r5, #704		//width of image
+	mov	r6, #640		//height of image
+	mov	r7, #560		//x
+	mov	r8, #172		//y
+	
+	@Set address
+	ldr 	r0, =winner	//address for winner image
+	
+	@Set w and h
+	ldr r1, =imgDim 	// w and h
+	str	r5, [r1]		// w = r5
+	str	r6, [r1, #4]	// h = r6
+
+	@Set x and y
+	ldr r2, =xy			// x and y
+	str	r7, [r2]		// x = r7
+	str	r8, [r2, #4]	// y = r8
+
+	@drawImg
+	bl	drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
+
+	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		pc, lr
+
+draw_Game_Over:
+	mov 	fp, sp	
+	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+
+	mov	r5, #704		//width of image
+	mov	r6, #640		//height of image
+	mov	r7, #560		//x
+	mov	r8, #172		//y
+	
+	@Set address
+	ldr 	r0, =gameOver	//address for gameover image
+	
+	@Set w and h
+	ldr r1, =imgDim 	// w and h
+	str	r5, [r1]		// w = r5
+	str	r6, [r1, #4]	// h = r6
+
+	@Set x and y
+	ldr r2, =xy			// x and y
+	str	r7, [r2]		// x = r7
+	str	r8, [r2, #4]	// y = r8
+
+	@drawImg
+	bl	drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
+
+	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		pc, lr
+
+draw_Lives_Score:
+	mov 	fp, sp	
+	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+
+	mov	r5, #704		//width of image
+	mov	r6, #32			//height of image
+	mov	r7, #560		//x
+	mov	r8, #140		//y
+	//ldr r9, =life_Score
+	
+	@Set address
+	ldr 	r0, =lifeScore	//address for lifeScore image
+	
+	@Set w and h
+	ldr r1, =imgDim 	// w and h
+	str	r5, [r1]		// w = r5
+	str	r6, [r1, #4]	// h = r6
+
+	@Set x and y
+	ldr r2, =xy			// x and y
+	str	r7, [r2]		// x = r7
+	str	r8, [r2, #4]	// y = r8
+
+	@drawImg
+	bl	drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
+
+	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		pc, lr
+	
+	
 draw_Background_Minus_Bricks:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
