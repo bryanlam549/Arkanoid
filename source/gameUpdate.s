@@ -65,27 +65,30 @@ updatePlayingStatePaddle:
 	mov		r4, r0			//r4 = button pressed
 	mov		r5, r1			//r5 = address of paddle coordinates
 	mov		r6, r2			//r6 = speed of paddle
-	bl		draw_Floor
 	
-	ldr		r0, [r5]		//paddle x
-	ldr		r1, [r5, #4]	//paddle y
-
+	//bl		draw_Floor2
+	ldr		r7, [r5]		//paddle x
+	ldr		r8, [r5, #4]	//paddle y
+	
 left_check:
 	cmp		r4, #6			//Left button
+	bleq		draw_Floor2
 	bne		right_check
-	sub		r0, r6			//decrease x-coordinate by x amount of pix
-	cmp		r0, #592		//compare the x coordinate to edge of wall
-	movlt		r0, #592		//press the paddle up to the wall
-	str		r0, [r5]		//update paddle coordinates
+	
+	sub		r7, r6			//decrease x-coordinate by x amount of pix
+	cmp		r7, #592		//compare the x coordinate to edge of wall
+	movlt	r7, #592		//press the paddle up to the wall
+	str		r7, [r5]		//update paddle coordinates
 	b		draw
 
 right_check:
-	cmp		r4, #7			//Right button
+	cmp		r4, #7			//Right buttons
+	bleq	draw_Floor2
 	bne		draw
-	add		r0, r6 			//increase paddle x-coordinate by x amount of pix
-	cmp		r0, #1104		//compare x coordinate to edg
-	movgt		r0, #1104		//press the paddle up to the wall	
-	str		r0, [r5]		//update the paddle coordinates
+	add		r7, r6 			//increase paddle x-coordinate by x amount of pix
+	cmp		r7, #1104		//compare x coordinate to edg
+	movgt	r7, #1104		//press the paddle up to the wall	
+	str		r7, [r5]		//update the paddle coordinates
 
 draw:	
 	ldr		r0, [r5]
@@ -97,36 +100,60 @@ draw:
 
 //r0 = button pressed
 //r1 = address of ball coordinates
-updateBall:
+updateBall:						//returns brick collision in r2 and paddle collision in r3
 	mov 		fp, sp	
 	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	
 	mov			r4, r0			//r4 = ball coordinates
 	mov			r5, r1			//r5 = paddle coordinates
 	@Update background while ball moves
-	bl			draw_Background_Minus_Bricks
-	ldr			r0, =brick_array
-	bl			draw_Bricks
 
+
+//	ldr			r2, [r4, #4]	//ball y
+//	cmp			r2, #396
+//	blgt		draw_Background_Minus_Bricks
+//	ldr			r0, =brick_array
+//	bllt		draw_Bricks
+
+	
+//	bl		draw_Background_Minus_Bricks
+//Try...only updating brick arrays when its hit. 
+//	ldr		r0, =brick_array
+//	bl		draw_Bricks
+
+	mov			r0, #3000
+	bl			delayMicroseconds
+	
 	mov			r2, r4
 	bl			ball_Direction
 	mov			r2, r4
 	bl			wall_Collision
 	mov			r2, r4
 	bl			brick_Collision
+	mov			r6, r2			// r6 = 1 means brick has been hit
 	mov			r2, r4
 	mov			r3, r5
 	bl			paddle_Collision
 	cmp			r3, #1			//Means the floor has been hit
+	
+	mov			r9, r0
+	mov			r10, r1
 	beq			exit
 	
 update_ball_info:
+	@update bricks if it gets hit
+	cmp		r6, #1
+	ldreq		r0, =brick_array
+	bleq		draw_Bricks
 	@update ball info
+	mov			r0, r9
+	mov			r1, r10
 	str			r0,	[r4]
 	str			r1, [r4, #4]	
 	bl			draw_Ball
 	
 exit:
+	mov			r2, r6
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov			pc, lr
 
@@ -233,7 +260,7 @@ which_Paddle_Portion:
 	
 not_On_Paddle:	
 	mov			r9, #0			//do i do this? yes i do...
-	cmp			r1, #764		//compare the y coordinate floor
+	cmp			r1, #796		//compare the y coordinate floor or 764
 	movgt		r3, #1			//You lose if you hit the floor
 	
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
@@ -275,8 +302,8 @@ brick_Collision:
 	mov			r3, #20
 	blt			continue_Brick_Collision
 	@Sixth row of the bricks
-	mov			r3, #25
 	cmp			r1, #396			//see if ball is hitting the 6th row
+	mov			r3, #25
 	blt			continue_Brick_Collision
 	bl			exit_Brick_Collision
 	
@@ -292,15 +319,16 @@ continue_Brick_Collision:
 	cmp			r9, #0				//Do while brick is present...
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
-
+	strne		r6, [r4, #12]		//update up/down dir
+		
+	
 	@update score
 	ldrne		r9, =life_Score		
 	ldrne		r10, [r9, #4]
 	addne		r10, #1
 	strne		r10, [r9, #4]
+	movne		r2, #1 			//means you hit a brick
 
-	strne		r6, [r4, #12]		//update
-	//movlt		r1, #236			//you'd wanna press the ball up to the brick...?
 	beq			check_if_hit_side	//when you are in the row, you wanna check if you hit the of a brick
 	bl			brick_Not_Hit
 
@@ -327,6 +355,8 @@ check_if_hit_side:
 	b			exit_Brick_Collision
 
 hit_side:
+
+	@reverse left/right direction when you hit the side
 	add			r7, #1
 	cmp			r7, #1
 	movgt		r7, #0
@@ -337,6 +367,16 @@ hit_side:
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
 	
+	
+	
+	@update score if you hit the side too
+	ldrne			r9, =life_Score		
+	ldrne			r10, [r9, #4]
+	addne			r10, #1
+	strne			r10, [r9, #4]
+	movne			r2, #1		//means you hit a brick
+	
+	@IF brick value is zero, dont reverse direction
 	addeq		r7, #1
 	cmp			r7, #1
 	movgt		r7, #0
@@ -391,12 +431,12 @@ ball_Direction:
 	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
 	
 	cmp			r5, #0			//45
-	moveq		r8, #7
-	moveq		r9, #7
+	moveq		r8, #2
+	moveq		r9, #2
 	
 	cmp			r5, #1			//60
-	moveq		r8, #14
-	moveq		r9, #7
+	moveq		r8, #2
+	moveq		r9, #1
 	
 	cmp			r6, #0			//up
 	subeq		r1, r9

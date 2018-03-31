@@ -2,8 +2,10 @@
 @ Code section
 .section .text
 
-.global draw_Background, draw_Bricks, draw_Paddle, draw_Ball, draw_Floor, draw_Background_Minus_Bricks, draw_Lives_Score, draw_Game_Over, draw_Winner
+.global draw_Background, draw_Bricks, draw_Paddle, draw_Ball, draw_Floor, draw_Background_Minus_Bricks, draw_Lives_Score, draw_Game_Over, draw_Winner, draw_Floor2
 
+
+@--------------------------------Draw Win Game Screen-----------------------------
 draw_Winner:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
@@ -31,7 +33,8 @@ draw_Winner:
 
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr
-
+	
+@--------------------------------Draw Win Game Over Screen-----------------------------
 draw_Game_Over:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
@@ -59,7 +62,7 @@ draw_Game_Over:
 
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr
-
+@--------------------------------Draw lives/score labels-----------------------------
 draw_Lives_Score:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
@@ -89,47 +92,39 @@ draw_Lives_Score:
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr
 	
-	
+@--------------------------------Draw JUST BACKGROUND-----------------------------	
+	//Try background as one image
 draw_Background_Minus_Bricks:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
-	mov		r9, #0			//Increment variable. How many tiles you want in x direction
-	mov		r4, #0			//Increment variable. How many tiles you want in y direction
-	mov		r5, #32			//width of image
-	mov		r6, #32			//height of image
+	
+	mov		r4, #0			//Increment variable. How many tiles you want to draw
+	mov		r5, #640		//width of image
+	mov		r6, #384		//height of image
 	mov		r7, #592		//x
 	mov		r8, #396		//y
 
-loopMinusBricks:
-	ldr 	r0, =background	//address for background
+	@set address
+	ldr 	r0, =half_background			//address for rightcorner
 	
 	@Set w and h
-	ldr 	r1, =imgDim 	// w and h
+	ldr 	r1, =imgDim 		// w and h
 	str		r5, [r1]		// w = r5
-	str		r6, [r1, #4]	// h = r6
+	str		r6, [r1, #4]		// h = r6
 
 	@Set x and y
-	ldr 	r2, =xy			// x and y
+	ldr 	r2, =xy				// x and y
 	str		r7, [r2]		// x = r7
-	str		r8, [r2, #4]	// y = r8
-	bl		drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
-	
-	@Add width or/and height and ++increment variable
-	add		r7, r5			//Add the width to x for offset
-	add		r9, #1
-	cmp		r9, #20			//Want 20 tiles in the x direction
-	blt		loopMinusBricks
+	str		r8, [r2, #4]		// y = r8
 
-	mov		r7, #592		//x
-	mov		r9, #0			//Reset for a new row
-	add		r8, r6			//Add the height to y for offset.
-	add		r4, #1			//increment
-	cmp		r4, #12			//Want 14 tiles in the y direction
-	blt		loopMinusBricks
+	@draw the image
+	bl		drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
 
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr
-@----------------------------------USED TO UPDATE PADDLE WHEN MOVE----------------------------------------
+	
+	
+@----------------------------------USED TO UPDATE PADDLE WHEN MOVE FOR INITIAL STATE----------------------------------------
 draw_Floor:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
@@ -141,7 +136,7 @@ draw_Floor:
 	mov		r8, #748		//y
 
 loopFloor:
-	ldr 	r0, =background	//address for background
+	ldr 	r0, =blackTile	//address for background
 	
 	@Set w and h
 	ldr 	r1, =imgDim 	// w and h
@@ -167,6 +162,40 @@ loopFloor:
 	cmp		r4, #2			//Want 19 tiles in the y direction
 	blt		loopFloor
 
+	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		pc, lr
+
+@----------------------------------USED TO UPDATE PADDLE WHEN MOVE FOR PLAYING STATE----------------------------------------
+//youre gonna wanna merge these 2...if you have time, otherwise...WHaaatever
+draw_Floor2:
+	mov 	fp, sp	
+	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		r9, #0			//Increment variable. How many tiles you want in x direction
+	mov		r5, #32			//width of image
+	mov		r6, #32			//height of image
+	mov		r7, #592		//x
+	mov		r8, #780		//y
+
+loopFloor2:
+	ldr 	r0, =blackTile	//address for background
+	
+	@Set w and h
+	ldr 	r1, =imgDim 	// w and h
+	str		r5, [r1]		// w = r5
+	str		r6, [r1, #4]	// h = r6
+
+	@Set x and y
+	ldr 	r2, =xy			// x and y
+	str		r7, [r2]		// x = r7
+	str		r8, [r2, #4]	// y = r8
+	bl		drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
+	
+	@Add width or/and height and ++increment variable
+	add		r7, r5			//Add the width to x for offset
+	add		r9, #1
+	cmp		r9, #20			//Want 20 tiles in the x direction
+	blt		loopFloor2
+	
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr
 
@@ -322,7 +351,7 @@ testRight:
 	mov		r8, #204		//y
 
 loopBack:
-	ldr 	r0, =background	//address for background
+	ldr 	r0, =blackTile	//address for background
 	
 	@Set w and h
 	ldr 	r1, =imgDim 	// w and h
@@ -364,7 +393,7 @@ draw_No_Brick:
 	mov		r8, r1			//y
 
 loop_No_Brick:
-	ldr 	r0, =background	//address for background
+	ldr 	r0, =blackTile	//address for background
 	
 	@Set w and h
 	ldr 	r1, =imgDim 	// w and h
