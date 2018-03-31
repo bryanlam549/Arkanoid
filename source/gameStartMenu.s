@@ -14,6 +14,10 @@ start_Menu:
 	bl		delayMicroseconds
 	mov		r0,	#0x10000
 	bl		delayMicroseconds
+	mov		r0,	#0x10000
+	bl		delayMicroseconds
+
+
 	bl		drawStart
 	bl		update_Cursor	//needs to return something in r0
 	

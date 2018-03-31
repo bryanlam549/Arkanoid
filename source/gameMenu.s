@@ -13,6 +13,10 @@ gameMenu:
 	bl		delayMicroseconds
 	mov		r0,	#0x10000
 	bl		delayMicroseconds
+	mov		r0,	#0x10000
+	bl		delayMicroseconds
+	mov		r0,	#0x10000
+	bl		delayMicroseconds
 	
 	mov	r5, #704		//width of image
 	mov	r6, #640		//height of image
@@ -95,6 +99,7 @@ user_input:
 	cmp	r0, #5			//move down
 	moveq	r10, #0
 	beq	update_cursor
+//	mov	r0, #8
 	cmp	r0, #8			// A pressed	
 	beq	return_input
 	b	user_input

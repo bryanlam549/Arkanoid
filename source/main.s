@@ -1,4 +1,8 @@
-.global main, brick_array, life_Score
+//Problems: Counting score wrong, Flickering
+//TODO: value packs
+
+
+.global main, brick_array, life_Score, ball_coordinates
 main:
 	@ ask for frame buffer information
 	ldr 		r0, =frameBufferInfo 		// frame buffer information structure
@@ -92,11 +96,19 @@ initial_pixels:						//initial state, ball still on paddle
 
 	@draw the game
 	bl		draw_Background
-	
+
 	ldr		r0, =brick_array
 	bl		draw_Bricks
 	
 	bl		draw_Lives_Score
+	ldr		r0, =life_Score
+	ldr		r0, [r0]
+	mov		r1, #1224
+	mov		r2, #0x00FF0000
+	bl		draw_Char
+	ldr		r0, =life_Score
+	ldr		r0, [r0, #4]
+	bl		draw_Score_Char
 	
 	ldr		r4, =paddle_coordinates
 	ldr		r0, [r4]			//x
@@ -135,8 +147,8 @@ left_check:
 	ldr		r1, =paddle_coordinates
 	ldr		r2, =ball_coordinates
 	lsrs		r7, #9
-	movlo		r3, #6
-	movhi		r3, #3
+	movlo		r3, #4
+	movhi		r3, #2
 	bl		updateInitialState
 
 right_check:
@@ -145,8 +157,8 @@ right_check:
 	ldr		r1, =paddle_coordinates
 	ldr		r2, =ball_coordinates
 	lsrs		r7, #9
-	movlo		r3, #6
-	movhi		r3, #3
+	movlo		r3, #4
+	movhi		r3, #2
 	bl		updateInitialState
 
 other_buttons:	
@@ -189,8 +201,20 @@ read_input:						// read SNES input until button pressed
 	ldr		r0, =ball_coordinates
 	ldr		r1, =paddle_coordinates
 	bl		updateBall
-	
-	@checks win: need to change this when we add value packs
+
+	@checks if brick has been hit and updates score 
+	@TODO: Add value pack scores: 
+	cmp			r2, #1
+	ldreq		r0, =life_Score
+	ldreq		r0, [r0, #4]
+	//ldreq		r1, =value_pack_score
+	//ldreq		r1, [r1]
+	//add		r0, r1
+	bleq		draw_Score_Char
+
+	//Also update score when you get a value pack
+
+	@checks win: Checks only score of bricks
 	ldr		r0, =life_Score
 	ldr		r0, [r0, #4]
 	cmp		r0, #60
@@ -220,8 +244,8 @@ continue:						// wait for user to release button
 	mov		r0, r6		
 	ldr		r1, =paddle_coordinates
 	lsrs	r7, #9
-	movlo	r2, #6
-	movhi	r2, #3
+	movlo	r2, #2
+	movhi	r2, #1
 	bl		updatePlayingStatePaddle
 		
 	
@@ -262,7 +286,7 @@ ball_coordinates:	//x, y, 45/60, up/down, left/right
 	.int	0, 0, 0, 0, 0 
 
 brick_array:
-	.int	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+	.int	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 
 life_Score:			//life, score
 	.int	3, 0
