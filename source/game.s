@@ -2,8 +2,72 @@
 @ Code section
 .section .text
 
-.global draw_Background, draw_Bricks, draw_Paddle, draw_Ball, draw_Floor, draw_Background_Minus_Bricks, draw_Lives_Score, draw_Game_Over, draw_Winner, draw_Floor2
+.global draw_Background, draw_Bricks, draw_Paddle, draw_Ball, draw_Floor, draw_Background_Minus_Bricks, draw_Lives_Score, draw_Game_Over, draw_Winner, draw_Floor2, draw_Floor3, draw_Value_Pack1,draw_Value_Pack2
 
+
+
+
+@----------------------------------DRAW VALUE PACK 1-------------------------------------------
+@r0=y
+draw_Value_Pack1:
+	mov 		fp, sp	
+	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}	
+
+	@initialize variables
+	mov			r5, #32			//width of image
+	mov			r6, #32			//height of image
+	mov			r7, r0			//x:
+	mov			r8, r1			//y:
+
+	@Set address
+	ldr 		r0, =valuePack1		//address for value pack 1
+	
+	@Set w and h
+	ldr 		r1, =imgDim 	// w and h
+	str			r5, [r1]		// w = r5
+	str			r6, [r1, #4]	// h = r6
+
+	@Set x and y
+	ldr 		r2, =xy			// x and y
+	str			r7, [r2]		// x = r7
+	str			r8, [r2, #4]	// y = r8
+
+	@draw the image
+	bl			drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
+
+	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			pc, lr
+	
+@----------------------------------DRAW VALUE PACK 2-------------------------------------------
+@r0=y
+draw_Value_Pack2:
+	mov 		fp, sp	
+	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}	
+
+	@initialize variables
+	mov			r5, #32			//width of image
+	mov			r6, #32			//height of image
+	mov			r7, r0			//x: 
+	mov			r8, r1			//y: 
+	
+	@Set address
+	ldr 		r0, =valuePack2		//address for value pack 2
+	
+	@Set w and h
+	ldr 		r1, =imgDim 	// w and h
+	str			r5, [r1]		// w = r5
+	str			r6, [r1, #4]	// h = r6
+
+	@Set x and y
+	ldr 		r2, =xy			// x and y
+	str			r7, [r2]		// x = r7
+	str			r8, [r2, #4]	// y = r8
+
+	@draw the image
+	bl			drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
+
+	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov			pc, lr
 
 @--------------------------------Draw Win Game Screen-----------------------------
 draw_Winner:
@@ -164,6 +228,42 @@ loopFloor:
 
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr
+
+
+@----------------------------------USED TO UPDATE PADDLE TOUCHES VALUE PACK---------------------------------------
+draw_Floor3:
+	mov 	fp, sp	
+	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		r9, #0			//Increment variable. How many tiles you want in x direction
+	mov		r5, #32			//width of image
+	mov		r6, #32			//height of image
+	mov		r7, #592		//x
+	mov		r8, #748		//y
+
+loopFloor3:
+	ldr 	r0, =blackTile	//address for background
+	
+	@Set w and h
+	ldr 	r1, =imgDim 	// w and h
+	str		r5, [r1]		// w = r5
+	str		r6, [r1, #4]	// h = r6
+
+	@Set x and y
+	ldr 	r2, =xy			// x and y
+	str		r7, [r2]		// x = r7
+	str		r8, [r2, #4]	// y = r8
+	bl		drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
+	
+	@Add width or/and height and ++increment variable
+	add		r7, r5			//Add the width to x for offset
+	add		r9, #1
+	cmp		r9, #20			//Want 20 tiles in the x direction
+	blt		loopFloor3
+	
+	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		pc, lr
+
+
 
 @----------------------------------USED TO UPDATE PADDLE WHEN MOVE FOR PLAYING STATE----------------------------------------
 //youre gonna wanna merge these 2...if you have time, otherwise...WHaaatever

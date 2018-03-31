@@ -99,7 +99,6 @@ user_input:
 	cmp	r0, #5			//move down
 	moveq	r10, #0
 	beq	update_cursor
-//	mov	r0, #8
 	cmp	r0, #8			// A pressed	
 	beq	return_input
 	b	user_input
