@@ -1,8 +1,7 @@
-//Problems: Counting score wrong, Flickering
 //TODO: value packs
 
 
-.global main, brick_array, life_Score, ball_coordinates
+.global main, brick_array, life_Score, ball_coordinates, value_Pack_On_Map, paddle_coordinates
 main:
 	@ ask for frame buffer information
 	ldr 		r0, =frameBufferInfo 		// frame buffer information structure
@@ -34,8 +33,17 @@ initialize_values:					//Whenver you press restart, you'd go back here
 	str		r2, [r5, #12]			//store the starting y-direction
 	mov		r2, #1				//x-direction = right
 	str		r2, [r5, #16]			//store the starting x-direction
+	@initialize value pack positions
+	ldr		r0, =value_Pack_On_Map
+	mov		r1, #0
+	str		r1, [r0]
+	str		r1, [r0, #8]
+	mov		r1, #396		//ones on the first rwo
+	str		r1, [r0, #4]
+	mov		r1, #300		//ones on the second row
+	str		r1, [r0, #12]
+	
 	@also initialize brick array
-
 	mov		r3, #3				// brick 3
 	mov		r2, #2				// brick 2
 	mov		r1, #1				// brick 1
@@ -68,6 +76,17 @@ test_brick_array:
 	b		initial_pixels
 	
 initialize_values_after_life_lost:	//Whenver you lose a life. But don't reset lives, score or brick arrays
+	@Erase value packs images after death
+	ldr		r0, =value_Pack_On_Map
+	ldr		r1, [r0]
+	cmp		r1, #1
+	moveq	r1, #0
+	streq	r1, [r0]
+	ldr		r1, [r0, #8]
+	cmp		r1, #1
+	moveq	r1, #0
+	streq	r1, [r0]
+	
 	@game over if life = 0
 	ldr		r0, =life_Score
 	ldr		r1, [r0]
@@ -147,8 +166,8 @@ left_check:
 	ldr		r1, =paddle_coordinates
 	ldr		r2, =ball_coordinates
 	lsrs		r7, #9
-	movlo		r3, #4
-	movhi		r3, #2
+	movlo		r3, #6
+	movhi		r3, #3
 	bl		updateInitialState
 
 right_check:
@@ -157,8 +176,8 @@ right_check:
 	ldr		r1, =paddle_coordinates
 	ldr		r2, =ball_coordinates
 	lsrs		r7, #9
-	movlo		r3, #4
-	movhi		r3, #2
+	movlo		r3, #6
+	movhi		r3, #3
 	bl		updateInitialState
 
 other_buttons:	
@@ -202,7 +221,6 @@ read_input:						// read SNES input until button pressed
 	ldr		r1, =paddle_coordinates
 	bl		updateBall
 
-	@checks if brick has been hit and updates score 
 	@TODO: Add value pack scores: 
 	cmp			r2, #1
 	ldreq		r0, =life_Score
@@ -244,8 +262,8 @@ continue:						// wait for user to release button
 	mov		r0, r6		
 	ldr		r1, =paddle_coordinates
 	lsrs	r7, #9
-	movlo	r2, #2
-	movhi	r2, #1
+	movlo	r2, #4
+	movhi	r2, #2
 	bl		updatePlayingStatePaddle
 		
 	
@@ -290,3 +308,7 @@ brick_array:
 
 life_Score:			//life, score
 	.int	3, 0
+	
+value_Pack_On_Map:
+	.int	0, 396, 0, 332	//valuepack1, y-coordinate, valuepack2 and y-coordinate
+						//valuepack1&2 = 1 on map, = 0 not on map

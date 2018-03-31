@@ -3,8 +3,16 @@
 @ Code section
 .section .text
 
-.global drawImg, DrawPixel, draw_Char, draw_Score_Char, quit_game
+.global drawImg, DrawPixel, draw_Char, draw_Score_Char, quit_game, draw_value_pack1
 
+
+draw_value_pack1:
+	mov 	fp, sp	
+	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	
+	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		pc, lr
+	
 draw_Score_Char:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
