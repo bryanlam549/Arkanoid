@@ -229,6 +229,13 @@ loopFloor:
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr
 
+@----------------------------------COVER SCORE + LIVES ... because i didn't want to resize the menu...---------------------------------------
+cover_LS:
+	mov 	fp, sp	
+	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+
+	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	mov		pc, lr
 
 @----------------------------------USED TO UPDATE PADDLE TOUCHES VALUE PACK---------------------------------------
 draw_Floor3:
@@ -300,10 +307,11 @@ loopFloor2:
 	mov		pc, lr
 
 
-//draws walls and background
+@----------------------------------DRAW THE BACKGROUND/WALLS/CEILINGS/ENVIRONMENT...---------------------------------------
 draw_Background:
 	mov 	fp, sp	
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
+	
 
 @----------------------------------DRAW THE LEFT WALL-----------------------------------------
 	mov			r4, #0			//Increment variable. How many tiles you want to draw
@@ -512,6 +520,8 @@ loop_No_Brick:
 	cmp		r9, #4			//Want 4 tiles in the x direction
 	blt		loop_No_Brick
 	
+	
+
 	pop		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov		pc, lr
 
@@ -599,13 +609,24 @@ draw_Paddle:
 	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}	
 
 	@initialize variables
-	mov			r5, #128		//width of image
-	mov			r6, #32			//height of image
-	mov			r7, r0			//x: 848 is center
-	mov			r8, r1			//y: 780
+		@when paddle has value pack 1: draw a larger paddle
+	ldr			r9, =paddle_coordinates
+	ldr			r9, [r9, #8]
+	cmp			r9, #1
+	moveq		r5, #160		//width of image
+	moveq		r6, #32			//height of image
+	moveq		r7, r0			//x: 
+	moveq		r8, r1			//y: 	
+	
+	movne		r5, #128		//width of image
+	movne		r6, #32			//height of image
+	movne		r7, r0			//x: 848 is center
+	movne		r8, r1			//y: 780
 
 	@Set address
-	ldr 		r0, =paddle		//address for paddle
+	ldreq		r0, =paddle_Large //address for large paddle
+	ldreq		r0, =paddle_Large //address for large paddle
+	ldrne 		r0, =paddle		//address for paddle
 	
 	@Set w and h
 	ldr 		r1, =imgDim 	// w and h
