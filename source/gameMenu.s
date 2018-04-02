@@ -8,6 +8,9 @@ gameMenu:
 	push	{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 
 
+
+
+		
 @----------------------------------Menu----------------------------------------
 	mov		r0,	#0x10000
 	bl		delayMicroseconds
@@ -39,7 +42,32 @@ gameMenu:
 	@drawImg
 	bl	drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
 	
+@----------------------------------COVER SCORE + LIVES ... because i didn't want to resize the menu...---------------------------------------
+	mov		r9, #0			//Increment variable. How many tiles you want in x direction
+	mov		r5, #32			//width of image
+	mov		r6, #32			//height of image
+	mov		r7, #560		//x
+	mov		r8, #140		//y
 
+loopCover_LS:
+	ldr 	r0, =blackTile	//address for background
+	
+	@Set w and h
+	ldr 	r1, =imgDim 	// w and h
+	str		r5, [r1]		// w = r5
+	str		r6, [r1, #4]	// h = r6
+
+	@Set x and y
+	ldr 	r2, =xy			// x and y
+	str		r7, [r2]		// x = r7
+	str		r8, [r2, #4]	// y = r8
+	bl		drawImg			//r0 = address for img, r1 = adderss for wh, r2 = address for xy
+	
+	@Add width or/and height and ++increment variable
+	add		r7, r5			//Add the width to x for offset
+	add		r9, #1
+	cmp		r9, #22			//Want 20 tiles in the x direction
+	blt		loopCover_LS
 
 @----------------------------------Menu Cursor-------------------------------------
 	

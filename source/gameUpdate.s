@@ -1,4 +1,5 @@
-@TODO: update score for value pack and that the paddle has the value packs and its effects
+@TODO: Update paddle effects. Use paddle coordinates offset by #8 and #12. 1 = has value pack. 0 = don't have value pack
+//Speed down, large paddle or sticky paddle
 
 @ Code section
 .section .text
@@ -65,10 +66,9 @@ updatePlayingStatePaddle:
 	mov		r4, r0			//r4 = button pressed
 	mov		r5, r1			//r5 = address of paddle coordinates
 	mov		r6, r2			//r6 = speed of paddle
-	
-	//bl		draw_Floor2
 	ldr		r7, [r5]		//paddle x
 	ldr		r8, [r5, #4]	//paddle y
+	ldr		r9, [r5, #8]	// Has: Value pack 1
 	
 left_check:
 	cmp		r4, #6			//Left button
@@ -86,6 +86,16 @@ right_check:
 	bleq	draw_Floor2
 	bne		draw
 	add		r7, r6 			//increase paddle x-coordinate by x amount of pix
+	
+	cmp		r9, #1
+	bleq	larger_Paddle
+	bl		normal_Paddle	
+larger_Paddle:
+	cmp		r7, #1072		//compare x coordinate to edg
+	movgt	r7, #1072		//press the paddle up to the wall	
+	str		r7, [r5]		//update the paddle coordinates
+
+normal_Paddle:
 	cmp		r7, #1104		//compare x coordinate to edg
 	movgt	r7, #1104		//press the paddle up to the wall	
 	str		r7, [r5]		//update the paddle coordinates
@@ -107,20 +117,7 @@ updateBall:						//returns brick collision in r2 and paddle collision in r3
 	mov			r4, r0			//r4 = ball coordinates
 	mov			r5, r1			//r5 = paddle coordinates
 	@Update background while ball moves
-
-
-//	ldr			r2, [r4, #4]	//ball y
-//	cmp			r2, #396
-//	blgt		draw_Background_Minus_Bricks
-//	ldr			r0, =brick_array
-//	bllt		draw_Bricks
-
 	
-//	bl		draw_Background_Minus_Bricks
-//Try...only updating brick arrays when its hit. 
-//	ldr		r0, =brick_array
-//	bl		draw_Bricks
-
 	mov			r0, #4500
 	bl			delayMicroseconds
 
@@ -137,6 +134,7 @@ updateBall:						//returns brick collision in r2 and paddle collision in r3
 	bl			paddle_Collision
 	cmp			r3, #1			//Means the floor has been hit
 	
+	mov			r8, r3			//only meaningful when r3 = 2. Means paddle has been hit
 	mov			r9, r0
 	mov			r10, r1
 	beq			exit
@@ -152,12 +150,10 @@ update_ball_info:
 	ldr			r1, [r0]
 	ldr			r0, [r0,#8]
 	cmp			r1, #1
-	moveq		r1, #396
 	bleq		update_Value_Pack1
 	cmp			r0, #1
 	bleq		update_Value_Pack2
-	
-	
+
 	@update ball info
 	mov			r0, r9
 	mov			r1, r10
@@ -166,7 +162,8 @@ update_ball_info:
 	bl			draw_Ball
 	
 exit:
-	mov			r2, r6
+	mov			r2, r6	//update ball will return if brick has been hit 
+	mov			r3, r8	//update ball will return if paddle has been hit
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov			pc, lr
 
@@ -174,106 +171,152 @@ exit:
 update_Value_Pack1:
 	mov 		fp, sp	
 	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
-	//x is 1152
-	//y= get out of the array
-	ldr			r0, =value_Pack_On_Map
-	ldr			r1, [r0, #4]		//is the value pack y
-	cmp			r1, #776			//hits the floor
-	movgt		r2, #0
-	strgt		r2, [r0]
-	add			r1, #1				//make it fall 1 pixel
-	str			r1, [r0, #4]		//update
 	
+	ldr			r4, =value_Pack_On_Map
+	ldr			r5, =paddle_coordinates
+	ldr			r6, =life_Score
+	mov			r7, #1024			//value pack x coordinates. Predetermined depending on which brick we want
 
-	ldr			r2, [r0]
-	cmp			r2, #1
-	mov			r0, #1152
-//	moveq		r1, #396
-	bleq		draw_Value_Pack1
-	blne		draw_Floor2
-	ldreq		r0, =paddle_coordinates		
-	ldreq		r1, [r0, #4]
-	ldreq		r0, [r0]
+	ldr			r1, [r4, #4]		//is value pack 1 y coordinates. 
+	cmp			r1, #776			//compare pack1 y coordinates and floor 
+	movgt		r2, #0				
+	strgt		r2, [r4]			//Store #0 into this address. Meaning value pack is not on map
+	add			r1, #1				//make it fall 1 pixel
+	str			r1, [r4, #4]		//update
+	
+	@Update the value pack, floor and paddle.
+	ldr			r2, [r4]			
+	cmp			r2, #1				//Check if value pack is on map
+	mov			r0, r7				//Set r0 as the x-coordinate. 
+	bleq		draw_Value_Pack1	//r0 = y coordinate and r1 = x coordinates
+	blne		draw_Floor2	
+	@update paddle
+	ldreq		r1, [r5, #4]
+	ldreq		r0, [r5]
 	bleq		draw_Paddle	
 	
-	@if paddle touches value pack
-	ldr			r0, =paddle_coordinates	
-	ldr			r2, [r0]		//beginning of the paddle
+	
+	@checks if paddle and value packs x coordinates align
+	ldr			r2, [r5]		//beginning of the paddle
 	add			r10, r2, #128	//end of the paddle
-	mov			r4, #1152		//the x coordinate of value pack 1
-	cmp			r4, r2			//value pack& beginning of paddle
+	mov			r8, r7			//the x coordinate of value pack 1
+	cmp			r8, r2			//value pack& beginning of paddle
 	bgt			test_If_Value1_Between_Pad
-
+	blt			value1_Not_On_Pad
 test_If_Value1_Between_Pad:
-	cmp			r4, r10
+	cmp			r8, r10
 	blt			test_If_Value1_On_Pad
 	bl			value1_Not_On_Pad
+	
 test_If_Value1_On_Pad:
-	ldr			r0, =value_Pack_On_Map
-	ldr			r4, [r0, #4]	//y coordinate of value pack
-	cmp			r4, #764		//compare y coordinate pack w/ top of paddle
+
+	ldr			r0, [r4, #4]	//y coordinate of value pack
+	cmp			r0, #764		//compare y coordinate pack w/ top of paddle
 	movgt		r1, #0			//paddles touches it so it makes the pack disappears
-	strgt		r1, [r0]		//update
+	strgt		r1, [r4]		//update
 	blgt		draw_Floor3
-	//Will also need to update that the paddle now has the value pack
+	
+	@increment value pack score
+	ldr			r0, [r4, #4]	//y coordinate of value pack
+	cmp			r0, #764		//compare y coordinate pack w/ top of paddle
+	ldrgt		r0, [r6, #8] 	
+	addgt		r0, #1			
+	strgt		r0, [r6, #8]	//increment value pack score by 1
+	
+	@Update that the paddle now has value pack
+	movgt		r0, #1
+	strgt		r0, [r5, #8]
+	
+	//blgt		draw_Floor2			//Draw black tiles above the paddle. Was getting remnants of value packs
+	@update paddle	
+	ldrgt		r1, [r5, #4]
+	ldrgt		r0, [r5]
+	blgt		draw_Paddle	
+	
+	@update the score
+	ldr		r1, [r6, #8]
+	ldr		r0, [r6, #4]
+	add		r0, r1
+	bl	draw_Score_Char
+
 
 	
 value1_Not_On_Pad:
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
-	mov			pc, lr
-	
+	mov			pc, lr	
+
 @-----------------------------------------UPDATE VALUE PACK2---------------------
 update_Value_Pack2:
 	mov 		fp, sp	
 	push		{r4, r5, r6, r7, r8, r9, r10, fp, lr}
-	//x is 768
-	//y= get out of the array
-	ldr			r0, =value_Pack_On_Map
-	ldr			r1, [r0, #12]		//is the value pack y
+	
+	ldr			r4, =value_Pack_On_Map
+	ldr			r5, =paddle_coordinates
+	ldr			r6, =life_Score
+	mov			r7, #768			//value pack x coordinates. Predetermined depending on which brick we want
+
+	ldr			r1, [r4, #12]		//is the value pack y
 	cmp			r1, #776			//hits the floor
 	movgt		r2, #0
-	strgt		r2, [r0, #8]
+	strgt		r2, [r4, #8]
 	add			r1, #1				//make it fall 1 pixel
-	str			r1, [r0, #12]		//update
+	str			r1, [r4, #12]		//update
 	
-
-	ldr			r2, [r0, #8]		//Value pack 2: on map
+	@update value pack, paddle and floor while value pack is on map
+	ldr			r2, [r4, #8]		//Value pack 2: on map
 	cmp			r2, #1				//Value pack 2 is on map
-	mov			r0, #768			//x coordinate of value pack
+	mov			r0, r7			//x coordinate of value pack
 	bleq		draw_Value_Pack2	//value pack 2. r0 = x and r1 = y
+	blne		draw_Floor2	
 	@update paddle
-	blne		draw_Floor2			
-	ldreq		r0, =paddle_coordinates		
-	ldreq		r1, [r0, #4]
-	ldreq		r0, [r0]
+	ldreq		r1, [r5, #4]
+	ldreq		r0, [r5]
 	bleq		draw_Paddle	
 	
-	@if paddle touches value pack
-	ldr			r0, =paddle_coordinates	
-	ldr			r2, [r0]		//beginning of the paddle
+	@Checks if paddle and value pack aligns
+	ldr			r2, [r5]		//beginning of the paddle
 	add			r10, r2, #128	//end of the paddle
-	mov			r4, #768		//the x coordinate of value pack 2
-	cmp			r4, r2			//value pack& beginning of paddle
+	mov			r8, r7			//the x coordinate of value pack 2
+	cmp			r8, r2			//value pack& beginning of paddle
 	bgt			test_If_Value2_Between_Pad
-
+	blt			value2_Not_On_Pad
 test_If_Value2_Between_Pad:
-	cmp			r4, r10
+	cmp			r8, r10
 	blt			test_If_Value2_On_Pad
 	bl			value2_Not_On_Pad
+	
 test_If_Value2_On_Pad:
-	ldr			r0, =value_Pack_On_Map
-	ldr			r4, [r0, #12]	//y coordinate of value pack2
-	cmp			r4, #764		//compare y coordinate pack w/ top of paddle
+	ldr			r0, [r4, #12]	//y coordinate of value pack2
+	cmp			r0, #764		//compare y coordinate pack w/ top of paddle
 	movgt		r1, #0			//paddles touches it so it makes the pack disappears
-	strgt		r1, [r0]		//update
+	strgt		r1, [r4, #8]	//update
 	blgt		draw_Floor3
-	//Will also need to update that the paddle now has the value pack
+
+	@increment value pack score
+	ldr			r0, [r4, #12]	//y coordinate of value pack
+	cmp			r0, #764		//compare y coordinate pack w/ top of paddle
+	ldrgt		r0, [r6, #8] 	
+	addgt		r0, #1			
+	strgt		r0, [r6, #8]	//increment value pack score by 1
+	
+	@Update that the paddle now has value pack
+	movgt		r0, #1
+	strgt		r0, [r5, #12]
+	
+	@update the score
+	ldr		r1, [r6, #8]
+	ldr		r0, [r6, #4]
+	add		r0, r1
+	bl	draw_Score_Char
+	
 
 	
 value2_Not_On_Pad:
 	pop			{r4, r5, r6, r7, r8, r9, r10, fp, lr}
 	mov			pc, lr
+
 	
+	//Will also need to update that the paddle now has the value pack
 @-----------------------------------PADDLE COLLISION----------------------	
 // tests paddle collision
 // returns 0 in r3 if player loses life, otherwise returns 1
@@ -286,11 +329,42 @@ paddle_Collision:
 
 	ldr			r2, [r5]		//paddle x
 	ldr			r3, [r5, #4]	//paddle y
-	ldr			r5, [r4, #8]	//ball angle: 0 =45, 1 = 60
+	ldr			r9, [r5, #8]	//Boolean: Paddle has value pack 1?
+	//ldr			r5, [r4, #8]	//ball angle: 0 =45, 1 = 60
 	ldr			r6, [r4, #12]	//ball up/down direction: 0 = up, 1 = down
 	ldr			r7, [r4, #16]	//ball left/right direction: 0 = left, 1 = right
 	
-	@Collision Paddle		
+
+	cmp			r9, #1
+	bleq		large_Pad_Collision
+	blne		normal_Pad_Collision
+
+large_Pad_Collision:
+	@right tip
+	add			r10, r2, #160	//end of the right tip 
+	add			r8, r2, #125		//beginning of the right tip
+	cmp			r0, r8			//compare ball& beginning of right tip
+	bgt			test_If_Between_Right_Tip
+
+	@middle right
+	add			r10, r2, #125	//end of the middle right portion
+	add			r8, r2, #81		//beginning of the middle right portion
+	cmp			r0, r8			//compare ball& beginning of middle right
+	bgt			test_If_Between_Middle_Right
+	@middle left
+	add			r10, r2, #81	//end of the middle left portion
+	add			r8, r2, #36		//beginning of the middle right portion
+	cmp			r0, r8			//compare ball& beginning of middle right 
+	bgt			test_If_Between_Middle_Left
+
+	@left tip
+	add			r10, r2, #36	//end of the left tip of the paddle
+	cmp			r0, r2			//compare ball&paddle beginning
+	bgt			test_If_Between_Left_Tip
+	
+	b			not_On_Paddle
+
+normal_Pad_Collision:	
 	@right tip
 	add			r10, r2, #128	//end of the right tip 
 	add			r8, r2, #92		//beginning of the right tip
@@ -346,9 +420,16 @@ test_If_Touch_Pad:
 	movgt		r6, #0			//move up now
 	strgt		r6, [r4, #12]	//update
 	bgt		which_Paddle_Portion
+	
+	
 	b			not_On_Paddle
 	
 which_Paddle_Portion:
+	@paddle has been hit so check if the paddle is sticky
+	ldrgt		r10, [r5, #12]
+	cmp			r10, #1			//if it has sticky paddle
+	moveq		r3, #2			//will return this. Will be used in main
+	
 	cmp			r9, #4			//hit right tip
 	moveq		r5, #1			//move at 60 degrees now
 	moveq		r7, #1			//move right now
@@ -433,29 +514,29 @@ continue_Brick_Collision:
 	add			r8, r3
 	
 @Checks if it hits a brick with a value pack. Only 2: Predetermined
-	cmp			r8, #29				//ball is in brick #30....
+	cmp			r8, #28				//ball is in brick #29
 	bleq		value_pack_1
-	cmp			r8, #11				//ball is in brick #12....
+	cmp			r8, #11				//ball is in brick #12
 	bleq		value_pack_2
-	bl			out					//skip if not #25
+	bl			not_value_brick			//skip if it hits a brick that does not have a value pack
 value_pack_1:
 	
 	ldr			r9, [r10, r8, lsl #2]//r9 = brick value
 	cmp			r9, #1				 //its about to break
-	bne			out					 //not about to break or no brick, go out
+	bne			not_value_brick		 //not about to break or no brick, go out
 	ldreq		r9, =value_Pack_On_Map
 	mov			r10, #1
 	streq		r10, [r9]
-	bl			out
+	bl			not_value_brick
 value_pack_2:
-	
 	ldr			r9, [r10, r8, lsl #2]//r9 = brick value
 	cmp			r9, #1				 //its about to break
-	bne			out					 //not about to break or no brick, go out
+	bne			not_value_brick		 //not about to break or no brick, go out
 	ldreq		r9, =value_Pack_On_Map
 	mov			r10, #1
 	streq		r10, [r9, #8]
-out:
+	
+not_value_brick:
 
 
 	ldr			r10, =brick_array	//Brick array
@@ -499,7 +580,31 @@ check_if_hit_side:
 	b			exit_Brick_Collision
 
 hit_side:
-
+@Checks if it hits a brick with a value pack. Only 2: Predetermined
+	cmp			r8, #28				//ball is in brick #29
+	bleq		value_pack_1_side
+	cmp			r8, #11				//ball is in brick #12
+	bleq		value_pack_2_side
+	bl			not_value_brick_side			//skip if it hits a brick that does not have a value pack
+value_pack_1_side:
+	ldr			r10, =brick_array	//Brick array
+	ldr			r9, [r10, r8, lsl #2]//r9 = brick value
+	cmp			r9, #1				 //its about to break
+	bne			not_value_brick_side		 //not about to break or no brick, go out
+	ldreq		r9, =value_Pack_On_Map
+	mov			r10, #1
+	streq		r10, [r9]
+	bl			not_value_brick_side
+value_pack_2_side:
+	ldr			r10, =brick_array	//Brick array
+	ldr			r9, [r10, r8, lsl #2]//r9 = brick value
+	cmp			r9, #1				 //its about to break
+	bne			not_value_brick_side		 //not about to break or no brick, go out
+	ldreq		r9, =value_Pack_On_Map
+	mov			r10, #1
+	streq		r10, [r9, #8]
+	
+not_value_brick_side:
 	@reverse left/right direction when you hit the side
 	add			r7, #1
 	cmp			r7, #1
@@ -510,8 +615,6 @@ hit_side:
 	cmp			r9, #0				
 	subne		r9, #1				//Change brick value
 	strne		r9, [r10, r8, lsl #2]//Update the brick
-	
-	
 	
 	@update score if you hit the side too
 	ldrne			r9, =life_Score		

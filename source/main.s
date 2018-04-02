@@ -1,4 +1,5 @@
-//TODO: value packs
+//TODO: value packs: increase score and value pack effects + update brick array when value packs are falling through them
+//I've finished...
 
 
 .global main, brick_array, life_Score, ball_coordinates, value_Pack_On_Map, paddle_coordinates
@@ -22,6 +23,9 @@ initialize_values:					//Whenver you press restart, you'd go back here
 	str		r0, [r4]			//store current x value
 	mov		r1, #780			//starting y coorinates for paddle
 	str		r1, [r4, #4]			//store current y value
+	mov		r1, #0
+	str		r1, [r4, #8]		//Paddle does not have value packs
+	str		r1, [r4, #12]
 	@store initial ball coordinates 
 	ldr		r5, =ball_coordinates
 	mov		r0, #904			//starting x coordinates for ball
@@ -73,6 +77,7 @@ test_brick_array:
 	ldr		r2, =life_Score
 	str		r0, [r2]
 	str		r1, [r2, #4]
+	str		r1, [r2, #8]
 	b		initial_pixels
 	
 initialize_values_after_life_lost:	//Whenver you lose a life. But don't reset lives, score or brick arrays
@@ -99,6 +104,8 @@ initialize_values_after_life_lost:	//Whenver you lose a life. But don't reset li
 	str		r0, [r4]			//store current x value
 	mov		r1, #780			//starting y coorinates for paddle
 	str		r1, [r4, #4]			//store current y value
+	str		r1, [r4, #8]		//Paddle does not have value packs after deaths
+	str		r1, [r4, #12]
 	@store initial ball coordinates 
 	ldr		r5, =ball_coordinates
 	mov		r0, #904			//starting x coordinates for ball
@@ -126,7 +133,9 @@ initial_pixels:						//initial state, ball still on paddle
 	mov		r2, #0x00FF0000
 	bl		draw_Char
 	ldr		r0, =life_Score
+	ldr		r3, [r0, #8]
 	ldr		r0, [r0, #4]
+	add		r0, r3
 	bl		draw_Score_Char
 	
 	ldr		r4, =paddle_coordinates
@@ -210,7 +219,7 @@ saved_state:
 
 	ldr		r5, =ball_coordinates
 	ldr		r0, [r5]			//x
-	ldr		r1, [r5, #4]			//y
+	ldr		r1, [r5, #4]		//y
 	bl		draw_Ball			//r0 = x, r1 = y
 
 
@@ -219,15 +228,29 @@ playing_state:						//The ball has been released
 read_input:						// read SNES input until button pressed
 	ldr		r0, =ball_coordinates
 	ldr		r1, =paddle_coordinates
-	bl		updateBall
+	bl	updateBall			
 
-	@TODO: Add value pack scores: 
+sticky_paddle:
+	ldr		r0, =ball_coordinates
+	ldr		r1, =paddle_coordinates
+	ldr		r6, [r1, #12]		//Checks if sticky paddle is on
+	cmp		r6, #1
+	bne		not_sticky
+	@if paddle is sticky then
+	cmp		r3, #2			
+	beq		initial_game_state	//if it hits paddle then go to initial game state where it sticks to paddle
+
+
+
+not_sticky:
+
+
+	@Score
 	cmp			r2, #1
 	ldreq		r0, =life_Score
+	ldreq		r1, [r0, #8]
 	ldreq		r0, [r0, #4]
-	//ldreq		r1, =value_pack_score
-	//ldreq		r1, [r1]
-	//add		r0, r1
+	addeq		r0, r1
 	bleq		draw_Score_Char
 
 	//Also update score when you get a value pack
@@ -297,8 +320,8 @@ exit:
 @ Data section
 .section .data
 
-paddle_coordinates:
-	.int	0, 0
+paddle_coordinates: // x, y, has value pack 1?, has value pack 2?
+	.int	0, 0, 0, 0 
 
 ball_coordinates:	//x, y, 45/60, up/down, left/right
 	.int	0, 0, 0, 0, 0 
@@ -306,8 +329,8 @@ ball_coordinates:	//x, y, 45/60, up/down, left/right
 brick_array:
 	.int	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 
-life_Score:			//life, score
-	.int	3, 0
+life_Score:			//life, brick score, value pack score
+	.int	3, 0, 0
 	
 value_Pack_On_Map:
 	.int	0, 396, 0, 332	//valuepack1, y-coordinate, valuepack2 and y-coordinate
